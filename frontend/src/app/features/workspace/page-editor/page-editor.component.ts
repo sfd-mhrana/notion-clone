@@ -7,10 +7,12 @@ import { Subject, takeUntil, distinctUntilChanged, filter } from 'rxjs';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatMenuModule } from '@angular/material/menu';
+import { MatDialog } from '@angular/material/dialog';
 import { BlockEditorComponent } from '../../editor/block-editor/block-editor.component';
 import { PagesActions, selectSelectedPage, selectPagesLoading } from '../../../store/pages';
 import { BlocksActions, selectBlocksForCurrentPage } from '../../../store/blocks';
 import { Block, BlockType, BlockContent } from '../../editor/editor.models';
+import { InputDialogComponent } from '../../../shared/dialogs/input-dialog/input-dialog.component';
 
 @Component({
   selector: 'app-page-editor',
@@ -86,6 +88,7 @@ import { Block, BlockType, BlockContent } from '../../editor/editor.models';
             (blockUpdate)="onBlockUpdate($event)"
             (blockDelete)="onBlockDelete($event)"
             (blockMove)="onBlockMove($event)"
+            (blockTypeChange)="onBlockTypeChange($event)"
             (uploadRequest)="onUploadRequest($event)"
           />
         </div>
@@ -274,6 +277,7 @@ import { Block, BlockType, BlockContent } from '../../editor/editor.models';
 export class PageEditorComponent implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly store = inject(Store);
+  private readonly dialog = inject(MatDialog);
   private readonly destroy$ = new Subject<void>();
 
   readonly pageId = signal<string | null>(null);
@@ -282,7 +286,7 @@ export class PageEditorComponent implements OnInit, OnDestroy {
   readonly blocks = this.store.selectSignal(selectBlocksForCurrentPage);
   readonly loading = this.store.selectSignal(selectPagesLoading);
 
-  readonly commonEmojis = ['📄', '📝', '📋', '📌', '📎', '📁', '💼', '🎯', '💡', '⭐', '🔥', '✨', '🚀', '💻', '📊', '📈'];
+  readonly commonEmojis = ['📄', '📝', '📋', '📌', '📎', '🏠', '💼', '🎯', '💡', '⭐', '🔥', '✨', '🚀', '💻', '📊', '📈'];
 
   ngOnInit(): void {
     this.route.paramMap
@@ -328,17 +332,27 @@ export class PageEditorComponent implements OnInit, OnDestroy {
   }
 
   addCover(): void {
-    // TODO: Open file picker or URL input for cover image
-    const url = prompt('Enter cover image URL:');
-    if (url) {
-      const pageId = this.pageId();
-      if (pageId) {
-        this.store.dispatch(PagesActions.updatePage({
-          id: pageId,
-          data: { coverImage: url },
-        }));
+    const dialogRef = this.dialog.open(InputDialogComponent, {
+      width: '450px',
+      data: {
+        title: 'Add Cover Image',
+        label: 'Image URL',
+        placeholder: 'https://images.unsplash.com/...',
+        submitLabel: 'Add Cover',
+      },
+    });
+
+    dialogRef.afterClosed().subscribe((url) => {
+      if (url) {
+        const pageId = this.pageId();
+        if (pageId) {
+          this.store.dispatch(PagesActions.updatePage({
+            id: pageId,
+            data: { coverImage: url },
+          }));
+        }
       }
-    }
+    });
   }
 
   changeCover(): void {
@@ -389,6 +403,13 @@ export class PageEditorComponent implements OnInit, OnDestroy {
     this.store.dispatch(BlocksActions.moveBlock({
       id: event.blockId,
       data: { order: event.newOrder },
+    }));
+  }
+
+  onBlockTypeChange(event: { blockId: string; newType: BlockType }): void {
+    this.store.dispatch(BlocksActions.updateBlock({
+      id: event.blockId,
+      data: { type: event.newType },
     }));
   }
 

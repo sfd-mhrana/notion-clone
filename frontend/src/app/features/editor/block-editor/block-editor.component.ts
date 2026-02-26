@@ -94,9 +94,19 @@ import { MatMenuModule } from '@angular/material/menu';
               <button class="control-btn add-btn" (click)="addBlockAfter(i)" title="Add block">
                 <mat-icon>add</mat-icon>
               </button>
-              <button class="control-btn drag-handle" cdkDragHandle title="Drag to move">
+              <button class="control-btn drag-handle" cdkDragHandle [matMenuTriggerFor]="blockMenu" title="Drag to move, click for options">
                 <mat-icon>drag_indicator</mat-icon>
               </button>
+              <mat-menu #blockMenu="matMenu">
+                <button mat-menu-item (click)="deleteBlock(i)">
+                  <mat-icon>delete</mat-icon>
+                  <span>Delete</span>
+                </button>
+                <button mat-menu-item (click)="duplicateBlock(i)">
+                  <mat-icon>content_copy</mat-icon>
+                  <span>Duplicate</span>
+                </button>
+              </mat-menu>
             </div>
 
             <!-- Block Content -->
@@ -275,9 +285,14 @@ import { MatMenuModule } from '@angular/material/menu';
 
       <!-- Empty state / Add first block -->
       @if (blocks().length === 0) {
-        <div class="empty-state" (click)="addFirstBlock()">
-          <span class="placeholder">Press '/' for commands, or start typing...</span>
-        </div>
+        <div
+          class="empty-state"
+          contenteditable="true"
+          (click)="onEmptyStateClick()"
+          (keydown)="onEmptyStateKeydown($event)"
+          (input)="onEmptyStateInput($event)"
+          data-placeholder="Press '/' for commands, or start typing..."
+        ></div>
       }
     </div>
   `,
@@ -365,11 +380,17 @@ import { MatMenuModule } from '@angular/material/menu';
     .empty-state {
       padding: 12px 0;
       cursor: text;
+      min-height: 24px;
+      outline: none;
+      font-size: 16px;
+      line-height: 1.5;
+      color: #1a1a1a;
     }
 
-    .placeholder {
+    .empty-state:empty::before {
+      content: attr(data-placeholder);
       color: rgba(55, 53, 47, 0.4);
-      font-size: 16px;
+      pointer-events: none;
     }
 
     /* Drag preview */
@@ -586,6 +607,55 @@ export class BlockEditorComponent {
     setTimeout(() => this.focusedBlockId.set(newBlock.id), 0);
   }
 
+  onEmptyStateClick(): void {
+    // Focus is handled automatically by contenteditable
+  }
+
+  onEmptyStateKeydown(event: KeyboardEvent): void {
+    // Handle slash command in empty state
+    if (event.key === '/') {
+      event.preventDefault();
+      this.addFirstBlockWithSlash();
+    }
+  }
+
+  onEmptyStateInput(event: Event): void {
+    const target = event.target as HTMLElement;
+    const text = target.textContent || '';
+
+    if (text.length > 0) {
+      // Create first block with the typed content
+      const newBlock = this.createNewBlock(BlockType.PARAGRAPH, 0);
+      newBlock.content = {
+        rich_text: [{ type: 'text', plain_text: text, text: { text: text }, annotations: {} }],
+      };
+      this.blocks.set([newBlock]);
+      this.blockCreate.emit({ block: newBlock, afterIndex: -1 });
+
+      // Clear the empty state and focus the new block
+      target.textContent = '';
+      setTimeout(() => this.focusedBlockId.set(newBlock.id), 0);
+    }
+  }
+
+  private addFirstBlockWithSlash(): void {
+    const newBlock = this.createNewBlock(BlockType.PARAGRAPH, 0);
+    this.blocks.set([newBlock]);
+    this.blockCreate.emit({ block: newBlock, afterIndex: -1 });
+
+    setTimeout(() => {
+      this.focusedBlockId.set(newBlock.id);
+      // Trigger slash menu
+      const rect = document.querySelector('.block-editor')?.getBoundingClientRect();
+      if (rect) {
+        this.openSlashMenu({
+          position: { x: rect.left + 96, y: rect.top + 50 },
+          filter: '',
+        });
+      }
+    }, 0);
+  }
+
   addBlockAfter(index: number): void {
     const blocks = this.blocks();
     const newOrder = index + 1 < blocks.length ? blocks[index + 1].order : (blocks[index]?.order || 0) + 1;
@@ -605,6 +675,19 @@ export class BlockEditorComponent {
     const updatedBlocks = blocks.filter((_, i) => i !== index);
     this.blocks.set(updatedBlocks);
     this.blockDelete.emit(blockId);
+  }
+
+  duplicateBlock(index: number): void {
+    const blocks = this.blocks();
+    const block = blocks[index];
+    const newBlock = this.createNewBlock(block.type, block.order + 0.5);
+    newBlock.content = { ...block.content };
+
+    const updatedBlocks = [...blocks];
+    updatedBlocks.splice(index + 1, 0, newBlock);
+    this.blocks.set(updatedBlocks);
+
+    this.blockCreate.emit({ block: newBlock, afterIndex: index });
   }
 
   onBlockDrop(event: CdkDragDrop<Block[]>): void {

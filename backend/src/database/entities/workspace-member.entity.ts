@@ -17,10 +17,10 @@ export class WorkspaceMember {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column({ name: 'workspace_id' })
+  @Column({ type: 'uuid', name: 'workspace_id' })
   workspaceId!: string;
 
-  @Column({ name: 'user_id' })
+  @Column({ type: 'uuid', name: 'user_id' })
   userId!: string;
 
   @Column({

@@ -19,43 +19,43 @@ export class Page {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column({ default: 'Untitled' })
+  @Column({ type: 'varchar', default: 'Untitled' })
   title!: string;
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   icon!: string | null;
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   coverImage!: string | null;
 
   @Index()
-  @Column({ name: 'workspace_id' })
+  @Column({ type: 'uuid', name: 'workspace_id' })
   workspaceId!: string;
 
   @Index()
-  @Column({ name: 'parent_id', nullable: true })
+  @Column({ type: 'uuid', name: 'parent_id', nullable: true })
   parentId!: string | null;
 
-  @Column({ default: false })
+  @Column({ type: 'boolean', default: false })
   isDatabase!: boolean;
 
-  @Column({ default: false })
+  @Column({ type: 'boolean', default: false })
   isTemplate!: boolean;
 
   @Index()
-  @Column({ default: false })
+  @Column({ type: 'boolean', default: false })
   isDeleted!: boolean;
 
-  @Column({ nullable: true })
+  @Column({ type: 'timestamp', nullable: true })
   deletedAt!: Date | null;
 
   @Column({ type: 'varchar', default: '0' })
   order!: string;
 
-  @Column({ name: 'created_by_id' })
+  @Column({ type: 'uuid', name: 'created_by_id' })
   createdById!: string;
 
-  @Column({ name: 'updated_by_id' })
+  @Column({ type: 'uuid', name: 'updated_by_id' })
   updatedById!: string;
 
   @CreateDateColumn()

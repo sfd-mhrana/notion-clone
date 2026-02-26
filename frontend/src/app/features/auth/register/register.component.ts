@@ -7,7 +7,6 @@ import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatIconModule } from '@angular/material/icon';
-import { MatDividerModule } from '@angular/material/divider';
 import { AuthService } from '../../../core/auth/auth.service';
 
 @Component({
@@ -22,7 +21,6 @@ import { AuthService } from '../../../core/auth/auth.service';
     MatButtonModule,
     MatProgressSpinnerModule,
     MatIconModule,
-    MatDividerModule,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -89,9 +87,11 @@ import { AuthService } from '../../../core/auth/auth.service';
           </button>
         </form>
 
-        <mat-divider class="divider">
+        <div class="divider">
+          <div class="divider-line"></div>
           <span class="divider-text">or continue with</span>
-        </mat-divider>
+          <div class="divider-line"></div>
+        </div>
 
         <button
           mat-stroked-button
@@ -209,19 +209,22 @@ import { AuthService } from '../../../core/auth/auth.service';
     }
 
     .divider {
+      display: flex;
+      align-items: center;
+      gap: 16px;
       margin: 24px 0;
-      position: relative;
+    }
+
+    .divider-line {
+      flex: 1;
+      height: 1px;
+      background: #e0e0e0;
     }
 
     .divider-text {
-      background: white;
-      padding: 0 16px;
       color: #666;
       font-size: 14px;
-      position: absolute;
-      left: 50%;
-      top: 50%;
-      transform: translate(-50%, -50%);
+      white-space: nowrap;
     }
 
     .google-button {

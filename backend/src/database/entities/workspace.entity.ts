@@ -17,13 +17,13 @@ export class Workspace {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column()
+  @Column({ type: 'varchar' })
   name!: string;
 
-  @Column({ default: '🏠' })
+  @Column({ type: 'varchar', default: '🏠' })
   iconEmoji!: string;
 
-  @Column({ name: 'owner_id' })
+  @Column({ type: 'uuid', name: 'owner_id' })
   ownerId!: string;
 
   @CreateDateColumn()

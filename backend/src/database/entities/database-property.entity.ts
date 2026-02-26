@@ -31,10 +31,10 @@ export class DatabaseProperty {
   id!: string;
 
   @Index()
-  @Column({ name: 'page_id' })
+  @Column({ type: 'uuid', name: 'page_id' })
   pageId!: string;
 
-  @Column()
+  @Column({ type: 'varchar' })
   name!: string;
 
   @Column({

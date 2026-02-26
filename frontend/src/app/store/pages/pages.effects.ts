@@ -1,8 +1,9 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { Router } from '@angular/router';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { of } from 'rxjs';
-import { map, exhaustMap, catchError } from 'rxjs/operators';
+import { map, exhaustMap, catchError, tap } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 import { Page, PageTreeNode, TrashPage } from './page.models';
 import { Block } from '../blocks/block.models';
@@ -15,6 +16,7 @@ export class PagesEffects {
   private readonly actions$ = inject(Actions);
   private readonly http = inject(HttpClient);
   private readonly store = inject(Store);
+  private readonly router = inject(Router);
 
   loadPageTree$ = createEffect(() =>
     this.actions$.pipe(
@@ -47,7 +49,7 @@ export class PagesEffects {
   loadPageSuccess$ = createEffect(() =>
     this.actions$.pipe(
       ofType(PagesActions.loadPageSuccess),
-      map(({ blocks }) => BlocksActions.setBlocksForPage({ blocks }))
+      map(({ page, blocks }) => BlocksActions.setBlocksForPage({ blocks, pageId: page.id }))
     )
   );
 
@@ -62,6 +64,26 @@ export class PagesEffects {
           )
         )
       )
+    )
+  );
+
+  // Navigate to newly created page
+  navigateToCreatedPage$ = createEffect(
+    () =>
+      this.actions$.pipe(
+        ofType(PagesActions.createPageSuccess),
+        tap(({ page }) => {
+          this.router.navigate(['/workspace', page.workspaceId, 'page', page.id]);
+        })
+      ),
+    { dispatch: false }
+  );
+
+  // Reload page tree after page creation to show new page in sidebar
+  reloadPageTreeOnCreate$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(PagesActions.createPageSuccess),
+      map(({ page }) => PagesActions.loadPageTree({ workspaceId: page.workspaceId }))
     )
   );
 

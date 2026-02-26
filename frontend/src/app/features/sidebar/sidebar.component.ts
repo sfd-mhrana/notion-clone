@@ -7,6 +7,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDividerModule } from '@angular/material/divider';
+import { MatDialog } from '@angular/material/dialog';
 import {
   WorkspacesActions,
   selectAllWorkspaces,
@@ -21,6 +22,7 @@ import {
 import { selectUser, AuthActions } from '../../store/auth';
 import { PageTreeNodeComponent } from './page-tree-node/page-tree-node.component';
 import { SearchService } from '../search/search.service';
+import { CreateWorkspaceDialogComponent } from '../../shared/dialogs/create-workspace-dialog/create-workspace-dialog.component';
 
 @Component({
   selector: 'app-sidebar',
@@ -90,6 +92,13 @@ import { SearchService } from '../search/search.service';
             <div class="skeleton-item"></div>
             <div class="skeleton-item"></div>
             <div class="skeleton-item"></div>
+          </div>
+        } @else if (workspaces().length === 0) {
+          <div class="empty-state">
+            <p>No workspace yet</p>
+            <button class="create-first-page" (click)="createWorkspace()">
+              Create your first workspace
+            </button>
           </div>
         } @else if (pageTree().length === 0) {
           <div class="empty-state">
@@ -372,6 +381,7 @@ export class SidebarComponent implements OnInit {
   private readonly store = inject(Store);
   private readonly router = inject(Router);
   private readonly searchService = inject(SearchService);
+  private readonly dialog = inject(MatDialog);
 
   readonly user = this.store.selectSignal(selectUser);
   readonly workspaces = this.store.selectSignal(selectAllWorkspaces);
@@ -391,19 +401,39 @@ export class SidebarComponent implements OnInit {
   }
 
   createWorkspace(): void {
-    const name = prompt('Workspace name:');
-    if (name) {
-      this.store.dispatch(WorkspacesActions.createWorkspace({ data: { name } }));
-    }
+    const dialogRef = this.dialog.open(CreateWorkspaceDialogComponent, {
+      width: '400px',
+    });
+
+    dialogRef.afterClosed().subscribe((result) => {
+      if (result) {
+        this.store.dispatch(WorkspacesActions.createWorkspace({
+          data: { name: result.name, iconEmoji: result.iconEmoji },
+        }));
+      }
+    });
   }
 
   createPage(): void {
-    const workspace = this.selectedWorkspace();
+    let workspace = this.selectedWorkspace();
+
+    // Fallback: if no workspace selected but workspaces exist, select the first one
+    if (!workspace) {
+      const allWorkspaces = this.workspaces();
+      if (allWorkspaces.length > 0) {
+        workspace = allWorkspaces[0];
+        this.store.dispatch(WorkspacesActions.selectWorkspace({ id: workspace.id }));
+      }
+    }
+
     if (workspace) {
       this.store.dispatch(PagesActions.createPage({
         workspaceId: workspace.id,
         data: { title: 'Untitled' },
       }));
+    } else {
+      // No workspace exists - prompt user to create one first
+      this.createWorkspace();
     }
   }
 
@@ -420,7 +450,17 @@ export class SidebarComponent implements OnInit {
   }
 
   onCreateChildPage(parentId: string): void {
-    const workspace = this.selectedWorkspace();
+    let workspace = this.selectedWorkspace();
+
+    // Fallback: if no workspace selected but workspaces exist, select the first one
+    if (!workspace) {
+      const allWorkspaces = this.workspaces();
+      if (allWorkspaces.length > 0) {
+        workspace = allWorkspaces[0];
+        this.store.dispatch(WorkspacesActions.selectWorkspace({ id: workspace.id }));
+      }
+    }
+
     if (workspace) {
       this.store.dispatch(PagesActions.createPage({
         workspaceId: workspace.id,

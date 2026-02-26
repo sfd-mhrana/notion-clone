@@ -51,11 +51,11 @@ export class Block {
   type!: BlockType;
 
   @Index()
-  @Column({ name: 'page_id' })
+  @Column({ type: 'uuid', name: 'page_id' })
   pageId!: string;
 
   @Index()
-  @Column({ name: 'parent_block_id', nullable: true })
+  @Column({ type: 'uuid', name: 'parent_block_id', nullable: true })
   parentBlockId!: string | null;
 
   @Column({ type: 'jsonb', default: {} })
@@ -64,7 +64,7 @@ export class Block {
   @Column({ type: 'int', default: 0 })
   order!: number;
 
-  @Column({ name: 'created_by_id' })
+  @Column({ type: 'uuid', name: 'created_by_id' })
   createdById!: string;
 
   @CreateDateColumn()

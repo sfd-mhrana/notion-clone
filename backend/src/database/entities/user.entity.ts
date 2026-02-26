@@ -17,13 +17,13 @@ export class User {
   @Column({ unique: true })
   email!: string;
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   passwordHash!: string | null;
 
-  @Column()
+  @Column({ type: 'varchar' })
   name!: string;
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   avatarUrl!: string | null;
 
   @CreateDateColumn()

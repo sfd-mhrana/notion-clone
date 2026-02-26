@@ -51,8 +51,12 @@ export const blocksReducer = createReducer(
     error,
   })),
 
-  on(BlocksActions.setBlocksForPage, (state, { blocks }) => {
-    const pageId = blocks[0]?.pageId || null;
+  on(BlocksActions.setCurrentPageId, (state, { pageId }) => ({
+    ...state,
+    currentPageId: pageId,
+  })),
+
+  on(BlocksActions.setBlocksForPage, (state, { blocks, pageId }) => {
     const loadedPageIds = pageId && !state.loadedPageIds.includes(pageId)
       ? [...state.loadedPageIds, pageId]
       : state.loadedPageIds;

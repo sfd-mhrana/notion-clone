@@ -7,11 +7,14 @@ import {
   ElementRef,
   OnInit,
   HostListener,
+  inject,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatDialog } from '@angular/material/dialog';
+import { InputDialogComponent } from '../../../shared/dialogs/input-dialog/input-dialog.component';
 
 export type FormatType = 'bold' | 'italic' | 'underline' | 'strikethrough' | 'code' | 'link';
 
@@ -141,6 +144,8 @@ export class FormattingToolbarComponent implements OnInit {
 
   adjustedPosition = { x: 0, y: 0 };
 
+  private readonly dialog = inject(MatDialog);
+
   constructor(private elementRef: ElementRef) {}
 
   ngOnInit(): void {
@@ -210,14 +215,30 @@ export class FormattingToolbarComponent implements OnInit {
         }
         break;
       case 'link':
-        const url = prompt('Enter URL:');
-        if (url) {
-          document.execCommand('createLink', false, url);
-        }
-        break;
+        this.openLinkDialog();
+        return; // Don't emit yet, will emit after dialog closes
     }
 
     this.formatApply.emit(format);
+  }
+
+  private openLinkDialog(): void {
+    const dialogRef = this.dialog.open(InputDialogComponent, {
+      width: '400px',
+      data: {
+        title: 'Insert Link',
+        label: 'URL',
+        placeholder: 'https://example.com',
+        submitLabel: 'Insert',
+      },
+    });
+
+    dialogRef.afterClosed().subscribe((url) => {
+      if (url) {
+        document.execCommand('createLink', false, url);
+        this.formatApply.emit('link');
+      }
+    });
   }
 
   private adjustPosition(): void {

@@ -5,12 +5,14 @@ import {
   EventEmitter,
   ChangeDetectionStrategy,
   signal,
+  inject,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatDialogModule, MatDialog } from '@angular/material/dialog';
+import { ConfirmDialogComponent } from '../../../shared/dialogs/confirm-dialog/confirm-dialog.component';
 
 export interface TrashPage {
   id: string;
@@ -294,14 +296,40 @@ export class TrashComponent {
   }
 
   deletePermanently(page: TrashPage): void {
-    if (confirm(`Are you sure you want to permanently delete "${page.title || 'Untitled'}"? This cannot be undone.`)) {
-      this.deleteForever.emit(page);
-    }
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      width: '400px',
+      data: {
+        title: 'Delete Permanently',
+        message: `Are you sure you want to permanently delete "${page.title || 'Untitled'}"? This cannot be undone.`,
+        confirmLabel: 'Delete',
+        confirmColor: 'warn',
+        icon: 'delete_forever',
+      },
+    });
+
+    dialogRef.afterClosed().subscribe((confirmed) => {
+      if (confirmed) {
+        this.deleteForever.emit(page);
+      }
+    });
   }
 
   emptyTrash(): void {
-    if (confirm('Are you sure you want to permanently delete all items in trash? This cannot be undone.')) {
-      this.emptyAll.emit();
-    }
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      width: '400px',
+      data: {
+        title: 'Empty Trash',
+        message: 'Are you sure you want to permanently delete all items in trash? This cannot be undone.',
+        confirmLabel: 'Empty Trash',
+        confirmColor: 'warn',
+        icon: 'delete_sweep',
+      },
+    });
+
+    dialogRef.afterClosed().subscribe((confirmed) => {
+      if (confirmed) {
+        this.emptyAll.emit();
+      }
+    });
   }
 }

@@ -1,16 +1,20 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
+import { Store } from '@ngrx/store';
 import { of } from 'rxjs';
-import { map, exhaustMap, catchError } from 'rxjs/operators';
+import { map, exhaustMap, catchError, withLatestFrom, filter } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 import { Workspace, WorkspaceDetail, WorkspaceMember } from './workspace.models';
 import { WorkspacesActions } from './workspaces.actions';
+import { selectSelectedWorkspaceId, selectAllWorkspaces } from './workspaces.selectors';
+import { PagesActions } from '../pages/pages.actions';
 
 @Injectable()
 export class WorkspacesEffects {
   private readonly actions$ = inject(Actions);
   private readonly http = inject(HttpClient);
+  private readonly store = inject(Store);
 
   loadWorkspaces$ = createEffect(() =>
     this.actions$.pipe(
@@ -23,6 +27,25 @@ export class WorkspacesEffects {
           )
         )
       )
+    )
+  );
+
+  // Auto-select the first workspace and load its pages when workspaces are loaded
+  autoSelectWorkspace$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(WorkspacesActions.loadWorkspacesSuccess),
+      withLatestFrom(this.store.select(selectSelectedWorkspaceId)),
+      filter(([{ workspaces }, selectedId]) => workspaces.length > 0 && !selectedId),
+      map(([{ workspaces }]) => WorkspacesActions.selectWorkspace({ id: workspaces[0].id }))
+    )
+  );
+
+  // Load page tree when a workspace is selected
+  loadPagesOnWorkspaceSelect$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(WorkspacesActions.selectWorkspace),
+      filter(({ id }) => id !== null),
+      map(({ id }) => PagesActions.loadPageTree({ workspaceId: id! }))
     )
   );
 
@@ -51,6 +74,14 @@ export class WorkspacesEffects {
           )
         )
       )
+    )
+  );
+
+  // Auto-select newly created workspace
+  selectCreatedWorkspace$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(WorkspacesActions.createWorkspaceSuccess),
+      map(({ workspace }) => WorkspacesActions.selectWorkspace({ id: workspace.id }))
     )
   );
 

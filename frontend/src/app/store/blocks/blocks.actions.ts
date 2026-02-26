@@ -8,7 +8,8 @@ export const BlocksActions = createActionGroup({
     'Load Blocks Success': props<{ blocks: Block[] }>(),
     'Load Blocks Failure': props<{ error: string }>(),
 
-    'Set Blocks For Page': props<{ blocks: Block[] }>(),
+    'Set Current Page Id': props<{ pageId: string }>(),
+    'Set Blocks For Page': props<{ blocks: Block[]; pageId: string }>(),
 
     'Create Block': props<{ pageId: string; data: CreateBlockRequest }>(),
     'Create Block Success': props<{ block: Block }>(),

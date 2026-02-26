@@ -2,7 +2,7 @@ import { inject, Injectable } from '@angular/core';
 import { Router } from '@angular/router';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { of } from 'rxjs';
-import { map, exhaustMap, catchError, tap } from 'rxjs/operators';
+import { map, exhaustMap, catchError, tap, switchMap } from 'rxjs/operators';
 import { AuthService } from '../../core/auth/auth.service';
 import { TokenService } from '../../core/auth/token.service';
 import { AuthActions } from './auth.actions';
@@ -83,6 +83,28 @@ export class AuthEffects {
         })
       ),
     { dispatch: false }
+  );
+
+  refreshToken$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(AuthActions.refreshToken),
+      exhaustMap(() =>
+        this.tokenService.tryRefreshToken().pipe(
+          switchMap((success) => {
+            if (success) {
+              return of(
+                AuthActions.refreshTokenSuccess({ accessToken: this.tokenService.getToken()! }),
+                AuthActions.loadCurrentUser()
+              );
+            }
+            return of(AuthActions.refreshTokenFailure({ error: 'Session expired' }));
+          }),
+          catchError((error) =>
+            of(AuthActions.refreshTokenFailure({ error: error.message || 'Failed to refresh token' }))
+          )
+        )
+      )
+    )
   );
 
   loadCurrentUser$ = createEffect(() =>
